@@ -478,3 +478,18 @@ type leafAvailable struct {
 func (*leafAvailable) Error() string {
 	return "leaf available"
 }
+
+type proofList [][]byte
+
+func (n *proofList) Put(key []byte, value []byte) error {
+	valueCopy := make([]byte, len(value))
+	copy(valueCopy, value)
+	*n = append(*n, valueCopy)
+	return nil
+}
+
+func (t *Trie) Prove(key []byte, fromLevel uint) ([][]byte, error) {
+	var proofList proofList
+	err := t.ext.Prove(key, fromLevel, &proofList)
+	return proofList, err
+}

@@ -538,6 +538,47 @@ func (s *State) Stage(newBlockNum, newBlockConflicts uint32) (*Stage, error) {
 	}, nil
 }
 
+func (s *State) ProveStorage(addr thor.Address, slot thor.Bytes32) ([][]byte, [][]byte, thor.Bytes32, error) {
+	secured := thor.Blake2b(addr[:])
+	securedSlot := thor.Blake2b(slot[:])
+
+	// ensure all nodes are loaded
+	// otherwise the Prove call below may fail sometimes
+	_, _, err := s.trie.Get(secured[:])
+	if err != nil {
+		return nil, nil, thor.Bytes32{}, err
+	}
+
+	proof, err := s.trie.Prove(secured[:], 0)
+	if err != nil {
+		return nil, nil, thor.Bytes32{}, err
+	}
+
+	storageTrie, err := s.BuildStorageTrie(addr)
+	if err != nil {
+		return nil, nil, thor.Bytes32{}, err
+	}
+
+	v, err := s.GetStorage(addr, slot)
+	if err != nil {
+		return nil, nil, thor.Bytes32{}, err
+	}
+
+	// ensure all nodes are loaded
+	// otherwise the Prove call below may fail sometimes
+	_, _, err = storageTrie.Get(securedSlot[:])
+	if err != nil {
+		return nil, nil, thor.Bytes32{}, err
+	}
+
+	storageProofBytes, err := storageTrie.Prove(securedSlot[:], 0)
+	if err != nil {
+		return nil, nil, thor.Bytes32{}, err
+	}
+
+	return proof, storageProofBytes, v, nil
+}
+
 type (
 	storageKey struct {
 		addr    thor.Address

@@ -18,6 +18,7 @@ package trie
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/log"
@@ -89,6 +90,13 @@ func (t *Trie) Prove(key []byte, fromLevel uint, proofDb DatabaseWriter) error {
 		}
 	}
 	return nil
+}
+
+func (t *ExtendedTrie) Prove(key []byte, fromLevel uint, proofDb DatabaseWriter) error {
+	if t.IsNonCrypto() {
+		return errors.New("non-crypto")
+	}
+	return t.trie.Prove(key, fromLevel, proofDb)
 }
 
 // VerifyProof checks merkle proofs. The given proof must contain the
